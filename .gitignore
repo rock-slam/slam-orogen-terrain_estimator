@@ -1,0 +1,13 @@
+build
+templates
+.orogen
+orogen-test.pc
+orocos.log
+patches-autobuild-stamp
+*.ior
+scripts/*.log
+scripts/*.dat
+scripts/*.txt
+scripts/*.out
+scripts/*.valgrind
+*~

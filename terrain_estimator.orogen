@@ -1,0 +1,61 @@
+name 'terrain_estimator'
+version '0.1'
+
+using_library "asguard"
+using_library "terrain_estimator" 
+import_types_from 'base'
+import_types_from "terrain_estimator/TerrainConfiguration.hpp"
+
+task_context 'Task' do
+    needs_configuration
+
+    ##########################
+    # transformer parameters
+    ##########################
+
+    transformer do
+	transformation("world", "body")
+	transformation("xsens", "body")
+	align_port('acceleration_samples', 0.01)
+	max_latency(0.1)
+    end
+
+    property('state_estimation_period', 'double', 0.01).
+	doc 'Time in s between state estimations readings'
+
+    property('max_delay', 'double', 0.1).
+	doc 'Time in s the state estimator will wait for expected readings.'
+
+    ##########################
+    # parameters
+    ##########################
+    
+    property('vibration_configuration', '/terrain_estimator/VibrationConfiguration').
+	doc 'the terrain vibration configuration'
+
+    ##########################
+    # i/o ports 
+    ##########################
+
+    input_port('orientation_samples', '/base/samples/RigidBodyState').
+	needs_reliable_connection.
+	doc 'timestamped orientation readings'
+
+    input_port('acceleration_samples', '/base/samples/IMUSensors').
+        needs_reliable_connection.
+        doc 'timestamped acceleration readings'
+
+    port_driven 'acceleration_samples'
+end
+
+
+deployment "test_terrain_estimator" do
+    do_not_install
+    terrain_estimator_task = task("terrain_estimator", "Task")
+    
+    add_default_logger
+    if !corba_enabled?
+        browse odometry_task
+    end
+end
+
