@@ -1,51 +1,69 @@
 name 'terrain_estimator'
 version '0.1'
 
-using_library "asguard"
 using_library "terrain_estimator" 
+
+using_library "asguard"
+
 import_types_from 'base'
-import_types_from "terrain_estimator/TerrainConfiguration.hpp"
+import_types_from 'sysmon'
+import_types_from "hbridge"
+import_types_from 'torque_estimator' 
+import_types_from "asguard/BodyState.hpp"
+import_types_from "asguard/Configuration.hpp"
+
+import_types_from "TerrainTypes.hpp"
 
 task_context 'Task' do
     needs_configuration
 
-    ##########################
-    # transformer parameters
-    ##########################
-
-    transformer do
-	transformation("world", "body")
-	transformation("xsens", "body")
-	align_port('acceleration_samples', 0.01)
-	max_latency(0.1)
-    end
-
-    property('state_estimation_period', 'double', 0.01).
-	doc 'Time in s between state estimations readings'
-
-    property('max_delay', 'double', 0.1).
-	doc 'Time in s the state estimator will wait for expected readings.'
 
     ##########################
     # parameters
     ##########################
-    
-    property('vibration_configuration', '/terrain_estimator/VibrationConfiguration').
-	doc 'the terrain vibration configuration'
+    property('slip_threashold', 'double',0.01).
+	doc 'the threashold of the relative movement between the axis that indicates a slip'
+    property('time_window', 'double',0.1).
+	doc 'the time window in which it is check if there was a slip'
+
+    ##########################
+    # aggregator parameters
+    ##########################
+
+    stream_aligner() do
+	align_port("motor_status", 0.001)
+	align_port("ground_forces_estimated", 0.001)
+	align_port("status", 0.001)
+	align_port("orientation_samples", 0.01)
+	max_latency(0.05)
+    end
 
     ##########################
     # i/o ports 
     ##########################
 
-    input_port('orientation_samples', '/base/samples/RigidBodyState').
-	needs_reliable_connection.
-	doc 'timestamped orientation readings'
-
-    input_port('acceleration_samples', '/base/samples/IMUSensors').
+    input_port('motor_status', '/base/actuators/Status').
         needs_reliable_connection.
-        doc 'timestamped acceleration readings'
+	doc 'timestamped asguard bodystate information'
 
-    port_driven 'acceleration_samples'
+    input_port("ground_forces_estimated", "torque_estimator/GroundForces").
+        doc("Estimated ground force values")
+  
+    input_port("status", "base/actuators/Status").
+        doc("Status of all hbridges. A data connection type is recommended").
+        needs_buffered_connection
+  
+
+    input_port('orientation_samples', '/base/samples/RigidBodyState').
+      doc("timestamped orientation readings").
+      needs_buffered_connection
+
+
+    output_port('slip_output', '/terrain_estimator/SlipOutput')
+
+        
+
+    port_driven 
 end
 
 

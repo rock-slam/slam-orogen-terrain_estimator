@@ -3,22 +3,58 @@
 #ifndef TERRAIN_ESTIMATOR_TASK_TASK_HPP
 #define TERRAIN_ESTIMATOR_TASK_TASK_HPP
 
-#include <fftw3.h>
-
-#include <Eigen/Core>
 #include "terrain_estimator/TaskBase.hpp"
-#include <asguard/Transformation.hpp>
-#include "terrain_estimator/VibrationAnalysis.hpp"
 
+
+#include "asguard/Configuration.hpp"
+#include "asguard/Transformation.hpp"
+
+#include "terrain_estimator/TerrainTypes.hpp"
+#include "terrain_estimator/ModelBaseAnalysis.hpp" 
+#include <Eigen/Core>
 namespace terrain_estimator {
+      
     class Task : public TaskBase
     {
 	friend class TaskBase;
-    protected:
-
-        virtual void acceleration_samplesTransformerCallback(const base::Time &ts, const ::base::samples::IMUSensors &acceleration_samples_sample);
-	  VibrationAnalysis *vibration; 
 	
+    protected:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	
+	asguard::Configuration config;
+	
+	bool init; 
+	double init_external_encouder[4]; 
+	
+	base::Time init_time; 
+	
+	bool uncalibrated_encoder; 
+	bool has_traction_force; 
+	
+	asguard::Configuration asguard_conf; 
+	
+	std::vector<double> traction_force; 
+	
+	SlipDetectionModelBased *slip_model; 
+	AsguardOdometry *asg_odo; 
+	
+	double initial_heading; 
+	
+	
+	virtual void ground_forces_estimatedCallback(const base::Time &ts, const ::torque_estimator::GroundForces &ground_forces_estimated_sample);
+        virtual void motor_statusCallback(const base::Time &ts, const ::base::actuators::Status &motor_status_sample);
+	virtual void statusCallback(const base::Time &ts, const ::base::actuators::Status &status_sample);
+	virtual void orientation_samplesCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample);
+	double traction_force_avg[4]; 
+	double normal_force_avg[4]; 
+	double traction_count; 
+	double current[4]; 
+	double init_traction; 
+	double heading; 
+	bool has_orientation; 
+	Vector2d odometry; 
+	Vector2d corrected_odometry; 
+    
     public:
         Task(std::string const& name = "terrain_estimator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);
