@@ -12,6 +12,7 @@
 #include "terrain_estimator/TerrainTypes.hpp"
 #include "terrain_estimator/ModelBaseAnalysis.hpp" 
 #include <Eigen/Core>
+#include <vector>
 namespace terrain_estimator {
       
     class Task : public TaskBase
@@ -23,38 +24,49 @@ namespace terrain_estimator {
 	
 	asguard::Configuration config;
 	
+	/** if a new slip detection cycle was initialized */ 
 	bool init; 
-	double init_external_encouder[4]; 
 	
+	/** The slip detections operates in time windows, this mark the time when a new slip detection started */ 
 	base::Time init_time; 
 	
-	bool uncalibrated_encoder; 
 	bool has_traction_force; 
 	
 	asguard::Configuration asguard_conf; 
 	
-	std::vector<double> traction_force; 
-	
 	SlipDetectionModelBased *slip_model; 
+
 	AsguardOdometry *asg_odo; 
 	
-	double initial_heading; 
+	std::vector<HistogramTerrainClassification> histogram; 
 	
+	/** Physical filter - brakes the steps only in the moments there was a single wheel slip */
+	/** if the wheel single wheel slipped */ 
+	bool has_single_wheel_slipped[4]; 
+	/** the current step of the wheel */ 
+	int current_step[4]; 
+	/** the tractions during the step */ 
+	std::vector<double> traction[4]; 
+	
+	/** the initial heading*/ 
+	double initial_heading; 
+	/** current heading */ 
+	double heading; 
+	
+	bool has_orientation; 
 	
 	virtual void ground_forces_estimatedCallback(const base::Time &ts, const ::torque_estimator::GroundForces &ground_forces_estimated_sample);
         virtual void motor_statusCallback(const base::Time &ts, const ::base::actuators::Status &motor_status_sample);
-	virtual void statusCallback(const base::Time &ts, const ::base::actuators::Status &status_sample);
 	virtual void orientation_samplesCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample);
+	
+	//TODO This are for Debug purposes 
 	double traction_force_avg[4]; 
 	double normal_force_avg[4]; 
 	double traction_count; 
-	double current[4]; 
 	double init_traction; 
-	double heading; 
-	bool has_orientation; 
 	Vector2d odometry; 
 	Vector2d corrected_odometry; 
-    
+
     public:
         Task(std::string const& name = "terrain_estimator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);

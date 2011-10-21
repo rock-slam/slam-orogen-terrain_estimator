@@ -8,7 +8,7 @@ using namespace asguard;
 using namespace Eigen; 
 
 Task::Task(std::string const& name)
-    : TaskBase(name), slip_model(0), asg_odo(0)
+    : TaskBase(name), slip_model(0), asg_odo(0) 
 {
     
 }
@@ -22,14 +22,8 @@ Task::~Task()
 {
     delete slip_model; 
     delete asg_odo; 
-    
 }
 
-void Task::statusCallback(const base::Time &ts, const ::base::actuators::Status &status_sample)
-{
-    for( int i = 0; i < 4; i++)
-      current[i]= status_sample.states.at(i).current; 
-}
 
 void Task::ground_forces_estimatedCallback(const base::Time &ts, const ::torque_estimator::GroundForces &ground_forces_estimated_sample)
 {
@@ -38,10 +32,26 @@ void Task::ground_forces_estimatedCallback(const base::Time &ts, const ::torque_
     traction_count++;
     
     for( int i = 0; i < 4; i++){
-// 	traction_force_avg[i] = traction_force_avg[i] + ground_forces_estimated_sample.tractionForce.at(i); 
-// 	normal_force_avg[i] = normal_force_avg[i] + ground_forces_estimated_sample.normalForce.at(i);
-	traction_force_avg[i] =  ground_forces_estimated_sample.tractionForce.at(i); 
-	normal_force_avg[i] =  ground_forces_estimated_sample.normalForce.at(i); 
+	traction_force_avg[i] = traction_force_avg[i] + ground_forces_estimated_sample.tractionForce.at(i); 
+	normal_force_avg[i] = normal_force_avg[i] + ground_forces_estimated_sample.normalForce.at(i);
+ 
+    }
+    
+    	
+    /** Histogram Terrain Classification output */ 	
+    for(int i = 0; i < 4; i++ ) 
+    { 
+	histogram.at(i).addTraction( ground_forces_estimated_sample.tractionForce.at(i));
+
+	if( histogram.at(i).getNumberPoints() > _number_points_histogram.value() ) 
+	{
+	    TerrainClassificationHistogram histogram_out; 
+	    histogram_out.wheel_idx = i; 
+	    histogram_out.terrain = _terrain_type.value(); 
+	    histogram_out.histogram = histogram.at(i).getHistogram(); 
+	    histogram.at(i).clearHistogram();
+	    _histogram_terrain_classification.write(histogram_out); 
+	}
     }
     
 }
@@ -63,86 +73,110 @@ void Task::motor_statusCallback(const base::Time &ts, const ::base::actuators::S
     if( !has_orientation ) 
 	return; 
     
-    if ( uncalibrated_encoder ) 
-    {
-	uncalibrated_encoder = false; 
-	for( int i = 0; i < 4; i++ )
-	    init_external_encouder[i] = motor_status_sample.states[i].positionExtern; 
-    } 
-    
     Vector4d encoder; 
     for( int i = 0; i < 4; i ++) 
-	encoder[i] = motor_status_sample.states[i].positionExtern - init_external_encouder[i]; 
+	encoder[i] = motor_status_sample.states[i].positionExtern; 
 
     if( !init ) 
     {
-	
 	init = true; 
 	init_time = motor_status_sample.time; 
 	
 	//TODO CHECK THE TRACK WIDTH 
 	initial_heading =  heading;
 	asg_odo->setInitialEncoder(encoder); 
-		
 	
 	for( int i = 0; i < 4; i++) {
 	    traction_force_avg[i] = 0; 
 	    normal_force_avg[i] = 0; 
 	}
 	traction_count = 0;
-	init_traction = traction_force_avg[0]; 
-    
     }
+    
 
 
-    //only calculate the distance between 0.1 ms time windows 
     double dt = (motor_status_sample.time - init_time).toSeconds();
     if( dt >= _time_window.value() ) 
     {
-	Vector4d translation = asg_odo->translationAxes(encoder); 
-	bool slip = slip_model->slipDetection(translation, heading - initial_heading , _slip_threashold.value());
-	  
-	std::cout << slip << std::endl; 
+	init = false;   
 
- 	SlipOutput slip_out; 
-	slip_out.delta_theta_measured = slip_model->delta_theta_measured; 
-	slip_out.delta_theta_model= slip_model->delta_theta_model; 
-	WheelProperty wp; 
-	for(int i = 0; i < 4; i++) 
-	    slip_out.wheel_property.push_back(wp);
-	slip_out.time = motor_status_sample.time; 
+	Vector4d translation = asg_odo->translationAxes(encoder); 
+	bool global_slip = slip_model->slipDetection(translation, heading - initial_heading , _slip_threashold.value());
+	
+	/** for Physical filter */ 
+	if( global_slip ) 
+	{
+	    for( int i = 0; i < 4; i ++)
+	    {
+		if(slip_model->hasThisWheelSingleSliped(i))
+		    has_single_wheel_slipped[i] = true; 
+	    }
+	}
+	
+	for( int i = 0; i < 4; i ++) 
+	{
+	    double step = floor( motor_status_sample.states[i].positionExtern / (2.0 * M_PI / 5.0));
+	    if( current_step[i] != step ) 
+	    {
+		current_step[i] = step; 
+		if(has_single_wheel_slipped[i]) 
+		{
+		    //calculate histogram 
+		    //output to port 
+		}
+		traction[i].clear(); 
+		has_single_wheel_slipped[i] = false; 
+	    }
+	    traction[i].push_back( traction_force_avg[i] / traction_count);
+	}
+	
+	
+	/** Slip Detection Output */ 
+	if( traction_count > 0) 
+	{
+	    SlipDetection slip; 
+	    slip.time = motor_status_sample.time; 
+	    slip.global_slip = global_slip; 
+	    slip.terrain_type = _terrain_type.value(); 
+	    for( int i = 0; i < 4; i ++){
+		if(slip_model->hasThisWheelSingleSliped(i))
+		    slip.slip[i].slip = true; 
+		else 
+		    slip.slip[i].slip = false; 
+		slip.slip[i].traction_force = traction_force_avg[i] / traction_count;
+		slip.slip[i].normal_force = normal_force_avg[i] / traction_count; 
+		slip.slip[i].total_slip =  slip_model->total_slip[i]; 
+		slip.slip[i].numb_slip_votes = slip_model->slip_votes[i]; 
+		slip.slip[i].encoder = encoder[i]; 
+	    }
+	    _slip_detection.write(slip); 
+	}
+	
+	/** Slip Corrected Odometry Output */ 
+ 	SlipCorrectedOdometry sc_odo; 
+	sc_odo.delta_theta_measured = slip_model->delta_theta_measured; 
+	sc_odo.delta_theta_model= slip_model->delta_theta_model; 
+	sc_odo.time = motor_status_sample.time; 
+	Vector4d corrected_translation = Vector4d::Zero();
 	
 	for( int i = 0; i < 4; i ++){
-	    slip_out.wheel_property[i].slip = false;  	
-	    
-	    slip_out.wheel_property[i].total_slip = slip_model->total_slip[i]; 
 	    if(slip_model->hasThisWheelSingleSliped(i))
 	    {
-		slip_out.wheel_property[i].corrected_translation = translation[i] + slip_model->total_slip[i];
-		slip_out.wheel_property[i].traction_force = traction_force_avg[i] / traction_count;
-		slip_out.wheel_property[i].normal_force = normal_force_avg[i] / traction_count; 
-
+		corrected_translation[i] = translation[i] + slip_model->total_slip[i];
 	    }
 	    else	
 	    {
-		slip_out.wheel_property[i].corrected_translation = translation[i]; 
-		slip_out.wheel_property[i].traction_force = 0;
-		slip_out.wheel_property[i].normal_force = 0; 
-
+		corrected_translation[i] = translation[i];
 	    }
-	    slip_out.wheel_property[i].translation = translation[i]; 
-// 	    slip_out.wheel_property[i].traction_force = traction_force_avg[i];
-// 	    slip_out.wheel_property[i].normal_force = normal_force_avg[i]; 
-	    slip_out.wheel_property[i].encoder = motor_status_sample.states[i].positionExtern - init_external_encouder[i];
-	    slip_out.wheel_property[i].current = current[i]; 
 	}	
 
 	double avg_translation = 0; 
 	double avg_corrected_translation = 0; 
+
 	for(int i = 0; i < 4; i ++) 
 	{
 	    avg_translation = avg_translation + translation[i]; 
-	    avg_corrected_translation = avg_corrected_translation + slip_out.wheel_property[i].corrected_translation; 
+	    avg_corrected_translation = avg_corrected_translation + corrected_translation[i]; 
 	}
 	avg_translation = avg_translation / 4; 
 	avg_corrected_translation = avg_corrected_translation / 4; 
@@ -150,12 +184,11 @@ void Task::motor_statusCallback(const base::Time &ts, const ::base::actuators::S
 	corrected_odometry[0] = corrected_odometry[0] + avg_corrected_translation*cos(heading-initial_heading); 
 	odometry[1] = odometry[1] + avg_corrected_translation*sin(heading-initial_heading); 
 	corrected_odometry[1] = corrected_odometry[1] + avg_corrected_translation*sin(heading-initial_heading); 
-	slip_out.odometry = odometry; 
-	slip_out.corrected_odometry = corrected_odometry; 
+	sc_odo.odometry = odometry; 
+	sc_odo.corrected_odometry = corrected_odometry; 
 	
- 	_slip_output.write( slip_out ); 
-//       if( dt > 0.01 ) 
-	init = false;   
+ 	_slip_corrected_odometry.write( sc_odo ); 
+
     }
 
 }
@@ -170,20 +203,28 @@ bool Task::configureHook()
         return false;
     
     init = false; 
-    uncalibrated_encoder = true;
     has_traction_force = false; 
     traction_count = 0;
     for( int i = 0; i < 4; i++) 
     {
       traction_force_avg[i] = 0; 
       normal_force_avg[i] = 0; 
-      current[i] = 0; 
     }
     delete slip_model; 
     delete asg_odo; 
+    
     //TODO CHECK THE TRACK WIDTH 
     slip_model = new SlipDetectionModelBased( asguard_conf.trackWidth, asguard::FRONT_LEFT, asguard::FRONT_RIGHT, asguard::REAR_LEFT, asguard::REAR_RIGHT);
     asg_odo = new AsguardOdometry(asguard_conf.angleBetweenLegs, asguard_conf.wheelRadiusAvg); 
+    
+    for(int i = 0; i < 4; i++) 
+    {
+	HistogramTerrainClassification histogram_wheel(_numb_bins.value(), _histogram_max_torque.value()); 
+	histogram.push_back(histogram_wheel);
+	
+	current_step[i] = -1; 
+	has_single_wheel_slipped[i] = false; 
+    }
     
     return true;
 }

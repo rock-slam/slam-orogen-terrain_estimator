@@ -21,11 +21,22 @@ task_context 'Task' do
     ##########################
     # parameters
     ##########################
+    
     property('slip_threashold', 'double',0.01).
 	doc 'the threashold of the relative movement between the axis that indicates a slip'
     property('time_window', 'double',0.1).
 	doc 'the time window in which it is check if there was a slip'
-
+    
+    property('terrain_type', '/terrain_estimator/TerrainType').
+	doc 'the type of terrain'
+    
+    property('numb_bins', 'int ').
+	doc 'the number of bins'
+    property('histogram_max_torque', 'double').
+	doc 'the histogram upper limit'
+    property('number_points_histogram', 'int').
+	doc 'the number of points needed for a histogram to be considered done'
+    
     ##########################
     # aggregator parameters
     ##########################
@@ -33,7 +44,6 @@ task_context 'Task' do
     stream_aligner() do
 	align_port("motor_status", 0.001)
 	align_port("ground_forces_estimated", 0.001)
-	align_port("status", 0.001)
 	align_port("orientation_samples", 0.01)
 	max_latency(0.05)
     end
@@ -59,8 +69,11 @@ task_context 'Task' do
       needs_buffered_connection
 
 
-    output_port('slip_output', '/terrain_estimator/SlipOutput')
+    output_port('slip_corrected_odometry', '/terrain_estimator/SlipCorrectedOdometry')
 
+    output_port('slip_detection', '/terrain_estimator/SlipDetection')
+
+    output_port('histogram_terrain_classification', '/terrain_estimator/TerrainClassificationHistogram') 
         
 
     port_driven 

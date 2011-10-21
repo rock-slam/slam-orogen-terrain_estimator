@@ -9,30 +9,43 @@
 
 namespace terrain_estimator
 {
-    struct WheelProperty{
-	bool slip;  
-	double traction_force; 
-	double normal_force;
-	double translation; 
-	double current; 
-	double encoder;
-	double total_slip; 
-	double corrected_translation; 
-	double translation_uncertanty; 
 
-    };
     
     
-    struct SlipOutput{
+    struct SlipCorrectedOdometry{
 	base::Time time; 
-	bool slip[4];  
 	double delta_theta_model;
 	double delta_theta_measured;
 	base::Vector2d odometry; 
 	base::Vector2d corrected_odometry;
-	std::vector<WheelProperty> wheel_property;  
     };
     
+    enum TerrainType{
+	GRASS,
+	PATH
+    }; 
+    
+    struct Wheelslip{
+	bool slip; 
+	double traction_force; 
+	double normal_force; 
+	double total_slip; 
+	double numb_slip_votes; 
+	double encoder; 
+    };
+    
+    struct SlipDetection{ 
+	bool global_slip; 
+	base::Time time; 
+	TerrainType terrain_type; 
+	Wheelslip slip[4]; 
+    }; 
+    
+    struct TerrainClassificationHistogram{
+	int wheel_idx; 
+	TerrainType terrain; 
+	std::vector<double> histogram;
+    }; 
     
 }
 #endif
