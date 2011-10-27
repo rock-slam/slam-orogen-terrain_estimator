@@ -12,19 +12,40 @@ namespace terrain_estimator
 
     
     
-    struct SlipCorrectedOdometry{
-	base::Time time; 
-	double delta_theta_model;
-	double delta_theta_measured;
-	base::Vector2d odometry; 
-	base::Vector2d corrected_odometry;
-    };
-    
     enum TerrainType{
 	GRASS,
 	PATH
     }; 
     
+    /**
+     * outputs a detected slip 
+     * @param time - the time the slip was detected (not the time it happened) 
+     * @param wheel_idx - the wheel index where the slip was detected
+     * @param max_traction - the peak value within a wheel step, where a slip was detected
+     * @param min_traction - the minimal value within a wheel step, where a slip was detected  
+     */
+    struct SlipDetected{
+	base::Time time; 
+	int wheel_idx; 
+	double max_traction; 
+	double min_traction; 
+    }; 
+    
+    /**
+    * @param time - the time the slip was detected (not the time it happened) 
+     * @param wheel_idx - the wheel index where the terrain was classified
+     * @param terrain - the terrain type 
+     * @param histogram - the histogram used for the classification
+     */
+    struct TerrainClassificationHistogram{
+	base::Time time; 
+	int wheel_idx; 
+	TerrainType terrain; 
+	std::vector<double> histogram;
+    }; 
+    
+
+    /** This are Debug Only Structures*/ 
     struct Wheelslip{
 	bool slip; 
 	double traction_force; 
@@ -34,18 +55,13 @@ namespace terrain_estimator
 	double encoder; 
     };
     
-    struct SlipDetection{ 
+    struct DebugSlipDetection{ 
 	bool global_slip; 
 	base::Time time; 
 	TerrainType terrain_type; 
 	Wheelslip slip[4]; 
     }; 
-    
-    struct TerrainClassificationHistogram{
-	int wheel_idx; 
-	TerrainType terrain; 
-	std::vector<double> histogram;
-    }; 
+
     
 }
 #endif

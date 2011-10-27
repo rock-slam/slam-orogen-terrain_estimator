@@ -21,39 +21,52 @@ namespace terrain_estimator {
 	
     protected:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	/** 
+	 * The slip detection logic 
+	 * @param heading_change - change in the heading 
+	 * @return if there was a detected slip in any of the wheel 
+	 */ 
+	bool slipDetection(base::Time ts, double heading_change); 
 	
-	asguard::Configuration config;
+	/** 
+	 * The slip detection logic 
+	 * @return if there was a detected slip in any of the wheel 
+	 */ 
+	void terrainRecognition(); 
 	
-	/** if a new slip detection cycle was initialized */ 
-	bool init; 
-	
-	/** The slip detections operates in time windows, this mark the time when a new slip detection started */ 
-	base::Time init_time; 
-	
-	bool has_traction_force; 
-	
+
 	asguard::Configuration asguard_conf; 
 	
 	SlipDetectionModelBased *slip_model; 
 
 	AsguardOdometry *asg_odo; 
 	
-	std::vector<HistogramTerrainClassification> histogram; 
+	std::vector<TractionForceGroupedIntoStep> steps; 
 	
-	/** Physical filter - brakes the steps only in the moments there was a single wheel slip */
-	/** if the wheel single wheel slipped */ 
-	bool has_single_wheel_slipped[4]; 
-	/** the current step of the wheel */ 
-	int current_step[4]; 
-	/** the tractions during the step */ 
-	std::vector<double> traction[4]; 
+	Histogram *histogram; 
 	
-	/** the initial heading*/ 
-	double initial_heading; 
-	/** current heading */ 
-	double heading; 
+	std::vector<HistogramTerrainClassification> terrain_classifiers; 
+	
+	
+	/** if the wheel slipped */ 
+	bool has_wheel_slipped[4]; 
+	
+	/** the current identification of the step  */ 
+	int current_step_id[4]; 
+
+	/** the previous heading*/ 
+	double prev_heading; 
+
+	/** current encoder reading*/ 
+	Vector4d encoder; 
+	
+	/** previous encoder reading*/ 
+	Vector4d prev_encoder; 
 	
 	bool has_orientation; 
+	
+	bool has_traction_force; 
 	
 	virtual void ground_forces_estimatedCallback(const base::Time &ts, const ::torque_estimator::GroundForces &ground_forces_estimated_sample);
         virtual void motor_statusCallback(const base::Time &ts, const ::base::actuators::Status &motor_status_sample);
@@ -64,8 +77,7 @@ namespace terrain_estimator {
 	double normal_force_avg[4]; 
 	double traction_count; 
 	double init_traction; 
-	Vector2d odometry; 
-	Vector2d corrected_odometry; 
+
 
     public:
         Task(std::string const& name = "terrain_estimator::Task");

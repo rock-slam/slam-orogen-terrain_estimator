@@ -34,6 +34,8 @@ task_context 'Task' do
 	doc 'the number of bins'
     property('histogram_max_torque', 'double').
 	doc 'the histogram upper limit'
+    property('histogram_min_torque', 'double').
+	doc 'the histogram lower limit'
     property('number_points_histogram', 'int').
 	doc 'the number of points needed for a histogram to be considered done'
     
@@ -69,11 +71,12 @@ task_context 'Task' do
       needs_buffered_connection
 
 
-    output_port('slip_corrected_odometry', '/terrain_estimator/SlipCorrectedOdometry')
+    output_port('histogram_terrain_classification', '/terrain_estimator/TerrainClassificationHistogram')
 
-    output_port('slip_detection', '/terrain_estimator/SlipDetection')
+    output_port('debug_slip_detection', '/terrain_estimator/DebugSlipDetection')
 
-    output_port('histogram_terrain_classification', '/terrain_estimator/TerrainClassificationHistogram') 
+    output_port('slip_detected', '/terrain_estimator/SlipDetected')
+    
         
 
     port_driven 

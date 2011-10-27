@@ -25,34 +25,36 @@ Orocos.run('test_terrain_estimator') do |p|
 
     logs = Array.new
     #logs <<  ARGV[0] + "external_camera.0.log"
-#     logs << ARGV[0]+"lowlevel.0.log"
-#     logs << ARGV[0]+"test_torque.0.log"
-#     logs << ARGV[0]+"xsens_imu.0.log"
+    logs << ARGV[0]+"lowlevel.0.log"
+    logs << ARGV[0]+"test_torque.0.log"
+    logs << ARGV[0]+"xsens_imu.0.log"
     # connect the tasks to the logs
-    log_replay = Orocos::Log::Replay.open( ARGV[0] )
-#     log_replay = Orocos::Log::Replay.open( logs ) 
+#     log_replay = Orocos::Log::Replay.open( ARGV[0] )
+     log_replay = Orocos::Log::Replay.open( logs ) 
 
-    log_replay.hbridge.status_motors.connect_to( estimator.motor_status, :type => :data )
+    log_replay.hbridge.status_motors.connect_to( estimator.motor_status, :type => :data ) 
     log_replay.torque.ground_forces_estimated.connect_to( estimator.ground_forces_estimated, :type => :data )
     log_replay.hbridge.status_motors.connect_to( estimator.status, :type => :data )
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
    # widget = Vizkit.display log_replay.external_camera.frame
     estimator.time_window = 0.01
-    estimator.slip_threashold = 0.008
+    estimator.slip_threashold = 0.005 #0.008 
     estimator.terrain_type = :PATH
     
-    estimator.numb_bins = 8
-    estimator.histogram_max_torque = 60 
-    estimator.number_points_histogram = 3000 
+    estimator.numb_bins = 16
+    estimator.histogram_max_torque = 60
+    estimator.histogram_min_torque = 0 
+    
+    estimator.number_points_histogram =  10
     
     estimator.configure
     estimator.start
     
-    plot = PlotTerrain.new
+    plot = PlotTerrain.new 
     
-    estimator.slip_detection.connect_to :type => :buffer,:size => 10000 do|data,name|
-	plot.addSlipDetection( data ) 
+    estimator.debug_slip_detection.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addDebugSlipDetection( data ) 
 	data
     end
 
@@ -60,6 +62,18 @@ Orocos.run('test_terrain_estimator') do |p|
 	plot.addHistogramTerrainClassification( data ) 
 	data
     end
+    
+    estimator.slip_detected.connect_to :type => :buffer,:size => 10000 do|data,name|
+	pp data
+	plot.addSlipDetected( data ) 
+	data
+    end
+
+#     estimator.physical_filter.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	plot.addPhysicalFilter( data ) 
+# 	data
+#     end    
+    
     
     log_replay.align( :use_sample_time )
    
