@@ -214,7 +214,7 @@ bool Task::configureHook()
     std::vector<double> svm_function; 
     for( int i = 0; i < 4; i++) 
     {
-	HistogramTerrainClassification classifier( _number_points_histogram.value(), svm_function); 
+	HistogramTerrainClassification classifier( _number_of_histogram.value(), svm_function); 
 	terrain_classifiers.push_back(classifier); 
 	
 	TractionForceGroupedIntoStep step(asguard_conf.angleBetweenLegs); 

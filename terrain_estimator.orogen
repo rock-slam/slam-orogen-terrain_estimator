@@ -22,22 +22,21 @@ task_context 'Task' do
     # parameters
     ##########################
     
-    property('slip_threashold', 'double',0.01).
+    property('slip_threashold', 'double',0.005).
 	doc 'the threashold of the relative movement between the axis that indicates a slip'
-    property('time_window', 'double',0.1).
-	doc 'the time window in which it is check if there was a slip'
+
     
     property('terrain_type', '/terrain_estimator/TerrainType').
-	doc 'the type of terrain'
+	doc 'the type of terrain used in the learning process'
     
-    property('numb_bins', 'int ').
+    property('numb_bins', 'int ',16).
 	doc 'the number of bins'
-    property('histogram_max_torque', 'double').
+    property('histogram_max_torque', 'double',0).
 	doc 'the histogram upper limit'
-    property('histogram_min_torque', 'double').
+    property('histogram_min_torque', 'double',-60).
 	doc 'the histogram lower limit'
-    property('number_points_histogram', 'int').
-	doc 'the number of points needed for a histogram to be considered done'
+    property('number_of_histogram', 'int',5).
+	doc 'the number of histograms needed for a terrain classification'
     
     ##########################
     # aggregator parameters

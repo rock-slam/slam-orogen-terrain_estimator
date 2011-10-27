@@ -46,7 +46,7 @@ Orocos.run('test_terrain_estimator') do |p|
     estimator.histogram_max_torque = 60
     estimator.histogram_min_torque = 0 
     
-    estimator.number_points_histogram =  10
+    estimator.number_of_histogram =  5
     
     estimator.configure
     estimator.start
