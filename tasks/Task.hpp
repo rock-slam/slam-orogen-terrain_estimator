@@ -33,7 +33,7 @@ namespace terrain_estimator {
 	 * The slip detection logic 
 	 * @return if there was a detected slip in any of the wheel 
 	 */ 
-	void terrainRecognition(); 
+	void terrainRecognition(base::Time ts); 
 	
 
 	asguard::Configuration asguard_conf; 

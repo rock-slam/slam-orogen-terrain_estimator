@@ -75,6 +75,8 @@ task_context 'Task' do
     output_port('debug_slip_detection', '/terrain_estimator/DebugSlipDetection')
 
     output_port('slip_detected', '/terrain_estimator/SlipDetected')
+
+    output_port('debug_physical_filter', '/terrain_estimator/PhysicalFilter ')
     
         
 

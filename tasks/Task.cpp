@@ -83,51 +83,58 @@ bool Task::slipDetection(base::Time ts, double heading_change)
     return global_slip; 
 }
 
-void Task::terrainRecognition()
+void Task::terrainRecognition(base::Time ts)
 {
  
-//     for( int i = 0; i < 4; i ++)
-//     {
-// // 	    if(slip_model->hasThisWheelSingleSliped(i))
-// 	if(slip_model->slip_votes[i] >= 2)
-// 	    has_wheel_slipped[i] = true; 
-//     }
-// 
-//     
-//     for( uint wheel_idx = 0; wheel_idx < 4; wheel_idx ++) 
-//     {
-// 	if( current_step_id[wheel_idx] != steps->getCompletedStepId(wheel_idx) ) 
-// 	{
-// 	    current_step_id[wheel_idx] = steps->getCompletedStepId(wheel_idx); 
-// 	    
-// 	    if(has_wheel_slipped[wheel_idx]) 
-// 	    {
-// 		step = steps->getCompletedStep(wheel_idx); 
-// 		
-// 		//Output for debug the step 
-// 		
-// 		//creates a histogram 
-// 		for( int i = 0; i < step.traction.size(); i++) 
-// 		    histogram.addTraction(step.traction.at(i));
-// 		std::vector<double> normalized_histogram = histogram->getHistogram(); 
-// 		histogram->clearHistogram();
-// 		
-// 		//adds the histogram for the terrain classification 
-// 		bool has_terrain_classification = terrain_classifiers[wheel_idx].addHistogram(normalized_histogram); 
-// 		if( has_terrain_classification ) 
-// 		{
-// 		    TerrainClassificationHistogram histogram_out; 
-// 		    histogram_out.wheel_idx = wheel_idx; 
-// 		    histogram_out.terrain = _terrain_type.value(); 
-// 		    histogram_out.histogram = terrain_classifiers[wheel_idx].getCombinedHistogram(); 
-// 		    _histogram_terrain_classification.write(histogram_out); 
-// 		    
-// 		}
-// 
-// 	    }
-// 	    has_wheel_slipped[wheel_idx] = false; 
-// 	}
-//     }
+    for( uint wheel_idx = 0; wheel_idx < 4; wheel_idx ++) 
+    {
+	if( slip_model->hasWheelConsecutivelySliped(wheel_idx))
+	    has_wheel_slipped[wheel_idx] = true; 
+	
+	if( current_step_id[wheel_idx] != steps.at(wheel_idx).getCompletedStepId() ) 
+	{
+	    current_step_id[wheel_idx] = steps.at(wheel_idx).getCompletedStepId(); 
+	    
+	    if(has_wheel_slipped[wheel_idx]) 
+	    {
+		Step step= steps.at(wheel_idx).getCompletedStep(); 
+		
+		//only consider steps that don't go into positive traction ( positive traction = wheel rotating backwars) 
+		//for the time being terrain recognition is only uni directional 
+		if( step.max_traction < 5)
+		{
+		    //Debug Lines 
+		    PhysicalFilter physical_filter; 
+		    physical_filter.tractions = step.traction; 
+		    physical_filter.wheel_idx = wheel_idx; 
+		    _debug_physical_filter.write(physical_filter);
+		    
+		    //creates a histogram 
+		    for(uint i = 0; i < step.traction.size(); i++) 
+			histogram->addValue(step.traction.at(i));
+		    
+		    std::vector<double> normalized_histogram = histogram->getHistogram(); 
+		    
+		    histogram->clearHistogram();
+		    
+		    //adds the histogram for the terrain classification 
+		    bool has_terrain_classification = terrain_classifiers.at(wheel_idx).addHistogram(normalized_histogram); 
+		    
+		    if( has_terrain_classification ) 
+		    {
+			TerrainClassificationHistogram histogram_out; 
+			histogram_out.time = ts;
+			histogram_out.wheel_idx = wheel_idx; 
+			histogram_out.terrain = _terrain_type.value(); 
+			histogram_out.histogram = terrain_classifiers.at(wheel_idx).getCombinedHistogram(); 
+			_histogram_terrain_classification.write(histogram_out); 
+			
+		    }
+		}
+	    }
+	    has_wheel_slipped[wheel_idx] = false; 
+	}
+    }
     
 }
 void Task::ground_forces_estimatedCallback(const base::Time &ts, const ::torque_estimator::GroundForces &ground_forces_estimated_sample)
@@ -160,14 +167,14 @@ void Task::orientation_samplesCallback(const base::Time &ts, const ::base::sampl
     }
     
     /** Slip detection */ 
-    bool global_slip = slipDetection(ts, heading - prev_heading); 
+    slipDetection(ts, heading - prev_heading); 
 
     prev_heading =  heading;
     prev_encoder = encoder; 
     
 
     /** Terrain Classification  */ 
- 
+    terrainRecognition(ts);
     
 
   
@@ -206,7 +213,9 @@ bool Task::configureHook()
     delete slip_model; 
     delete asg_odo; 
     delete histogram; 
-   
+    terrain_classifiers.clear(); 
+    steps.clear(); 
+    
     slip_model = new SlipDetectionModelBased( asguard_conf.trackWidth, asguard::FRONT_LEFT, asguard::FRONT_RIGHT, asguard::REAR_LEFT, asguard::REAR_RIGHT);
     asg_odo = new AsguardOdometry(asguard_conf.angleBetweenLegs, asguard_conf.wheelRadiusAvg); 
     histogram = new Histogram(_numb_bins.value(), _histogram_min_torque.value(), _histogram_max_torque.value()); 
@@ -217,8 +226,8 @@ bool Task::configureHook()
 	HistogramTerrainClassification classifier( _number_of_histogram.value(), svm_function); 
 	terrain_classifiers.push_back(classifier); 
 	
-	TractionForceGroupedIntoStep step(asguard_conf.angleBetweenLegs); 
-	steps.push_back(step);
+	TractionForceGroupedIntoStep stepStack(asguard_conf.angleBetweenLegs); 
+	steps.push_back(stepStack);
 	
     }
     

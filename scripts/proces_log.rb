@@ -38,13 +38,12 @@ Orocos.run('test_terrain_estimator') do |p|
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
    # widget = Vizkit.display log_replay.external_camera.frame
-    estimator.time_window = 0.01
     estimator.slip_threashold = 0.005 #0.008 
     estimator.terrain_type = :PATH
     
     estimator.numb_bins = 16
-    estimator.histogram_max_torque = 60
-    estimator.histogram_min_torque = 0 
+    estimator.histogram_max_torque = 0
+    estimator.histogram_min_torque = -60 
     
     estimator.number_of_histogram =  5
     
@@ -64,15 +63,14 @@ Orocos.run('test_terrain_estimator') do |p|
     end
     
     estimator.slip_detected.connect_to :type => :buffer,:size => 10000 do|data,name|
-	pp data
 	plot.addSlipDetected( data ) 
 	data
     end
 
-#     estimator.physical_filter.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	plot.addPhysicalFilter( data ) 
-# 	data
-#     end    
+    estimator.debug_physical_filter.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addPhysicalFilter( data ) 
+	data
+    end    
     
     
     log_replay.align( :use_sample_time )

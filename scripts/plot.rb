@@ -142,6 +142,7 @@ end
 class PlotTerrain 
     def initialize
 	@init_time = 0.0 
+	@sample = 0
 	
 	@plot_time_traction_slip = Array.new
 	for i in 0 .. 3 
@@ -158,7 +159,7 @@ class PlotTerrain
 	
 	@plot_legPos_traction = register2DPlot(ARGV[0], "leg position (rad) ", "Traction Force (N)") 
 
-	@plot_physicalFilter =  register2DPlot(ARGV[0],"Encoder Pos (degree)", "Traction Force (N)",true) 
+	@plot_physicalFilter =  register2DPlot(ARGV[0],"Sample", "Traction Force (N)",true) 
 	
 		
 	@plot_key = Array.new
@@ -176,7 +177,11 @@ class PlotTerrain
     
     def addPhysicalFilter( data ) 
 	#@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [getLegPos(data.encoder), data.traction] ) 
-	@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [getLegAngel(data.encoder) * 180.0 / Math::PI, data.traction] ) 
+	for i in 0 .. data.tractions.size - 1 
+	    @sample = @sample + 1 
+	    @plot_physicalFilter.addData( @plot_key[data.wheel_idx], [@sample, data.tractions[i]] ) 
+	end
+	  @sample = @sample + 100 
     end 
     
     def addHistogramTerrainClassification( data ) 
@@ -213,7 +218,7 @@ class PlotTerrain
 # 	@plot_normal_traction.show
 #  	@plot_time_totSlip.show
  	
-#	@plot_physicalFilter.show
+	@plot_physicalFilter.show
 	
 	for i in 0..3
 	    @plot_time_traction_slip[i].show

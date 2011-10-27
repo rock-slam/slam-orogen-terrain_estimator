@@ -62,6 +62,10 @@ namespace terrain_estimator
 	Wheelslip slip[4]; 
     }; 
 
+    struct PhysicalFilter{
+	std::vector<double> tractions;
+	int wheel_idx; 
+    }; 
     
 }
 #endif
