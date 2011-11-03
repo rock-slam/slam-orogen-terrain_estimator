@@ -60,9 +60,9 @@ task_context 'Task' do
     input_port("ground_forces_estimated", "torque_estimator/GroundForces").
         doc("Estimated ground force values")
   
-    input_port("status", "base/actuators/Status").
-        doc("Status of all hbridges. A data connection type is recommended").
-        needs_buffered_connection
+#    input_port("status", "base/actuators/Status").
+#        doc("Status of all hbridges. A data connection type is recommended").
+#        needs_buffered_connection
   
 
     input_port('orientation_samples', '/base/samples/RigidBodyState').
@@ -77,7 +77,6 @@ task_context 'Task' do
     output_port('slip_detected', '/terrain_estimator/SlipDetected')
 
     output_port('debug_physical_filter', '/terrain_estimator/PhysicalFilter ')
-    
         
 
     port_driven 
