@@ -179,6 +179,7 @@ class PlotTerrain
 	#@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [getLegPos(data.encoder), data.traction] ) 
 	for i in 0 .. data.tractions.size - 1 
 	    @sample = @sample + 1 
+
 	    @plot_physicalFilter.addData( @plot_key[data.wheel_idx], [@sample, data.tractions[i]] ) 
 	end
 	  @sample = @sample + 100 

@@ -5,17 +5,34 @@
 #include <vector>
 #include <base/eigen.h>
 #include <base/time.h>
-
-
+#include "terrain_estimator/TerrainConfiguration.hpp"
 namespace terrain_estimator
 {
 
-    
-    
-    enum TerrainType{
-	GRASS,
-	PATH
+    /**
+     * @param terrain_types - the list of terrains types in the classification
+     * @param min_number_of_votes - minimal number of votes needed for a terrain to be detected (each svm function counts as one vote) -
+     * @param svm_classifier - a vector os svm configurations for classifying terrain types 
+     */ 
+    struct SVMClassifiers{
+	std::vector< TerrainType > terrain_types; 
+	int min_number_votes; 
+	std::vector< SVMConfiguration > svm_classifier[4]; 
     }; 
+    
+    /**
+     * The configuration for the histogram for terrain configuration
+     * @param number_of_histogram - the number of histograms needed for a terrain classification
+     * @param number_bins - the number of bins in the histogram
+     * @param histogram_max_torque - the histogram upper limit
+     * @param histogram_min_torque - the histogram lower limit
+    */
+    struct HistogramConfiguration{
+	int number_of_histogram_combine; 
+	int number_bins; 
+	double histogram_max_torque;
+	double histogram_min_torque; 
+    };
     
     /**
      * outputs a detected slip 
@@ -40,6 +57,7 @@ namespace terrain_estimator
     struct TerrainClassificationHistogram{
 	base::Time time; 
 	int wheel_idx; 
+	double svm; 
 	TerrainType terrain; 
 	std::vector<double> histogram;
     }; 
@@ -58,7 +76,7 @@ namespace terrain_estimator
     struct DebugSlipDetection{ 
 	bool global_slip; 
 	base::Time time; 
-	TerrainType terrain_type; 
+	TerrainType terrain; 
 	Wheelslip slip[4]; 
     }; 
 

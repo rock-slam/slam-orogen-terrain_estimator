@@ -13,6 +13,7 @@ import_types_from 'torque_estimator'
 #import_types_from "asguard/Configuration.hpp"
 
 import_types_from "TerrainTypes.hpp"
+import_types_from "terrain_estimator/TerrainConfiguration.hpp" 
 
 task_context 'Task' do
     needs_configuration
@@ -28,16 +29,13 @@ task_context 'Task' do
     
     property('terrain_type', '/terrain_estimator/TerrainType').
 	doc 'the type of terrain used in the learning process'
+
     
-    property('numb_bins', 'int ',16).
-	doc 'the number of bins'
-    property('histogram_max_torque', 'double',0).
-	doc 'the histogram upper limit'
-    property('histogram_min_torque', 'double',-60).
-	doc 'the histogram lower limit'
-    property('number_of_histogram', 'int',5).
-	doc 'the number of histograms needed for a terrain classification'
-    
+    property('configuration', 'terrain_estimator/HistogramConfiguration')
+    property('svm_classifier', 'terrain_estimator/SVMClassifiers')
+
+
+    property('test', 'terrain_estimator/PhysicalFilter')
     ##########################
     # aggregator parameters
     ##########################
@@ -60,11 +58,6 @@ task_context 'Task' do
     input_port("ground_forces_estimated", "torque_estimator/GroundForces").
         doc("Estimated ground force values")
   
-#    input_port("status", "base/actuators/Status").
-#        doc("Status of all hbridges. A data connection type is recommended").
-#        needs_buffered_connection
-  
-
     input_port('orientation_samples', '/base/samples/RigidBodyState').
       doc("timestamped orientation readings").
       needs_buffered_connection

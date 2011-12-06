@@ -46,8 +46,9 @@ namespace terrain_estimator {
 	
 	Histogram *histogram; 
 	
-	std::vector<HistogramTerrainClassification> terrain_classifiers; 
+	std::vector<HistogramTerrainClassification> histogram_classifiers; 
 	
+	std::vector<SVMTerrainClassification> svm_classifiers; 
 	
 	/** if the wheel slipped */ 
 	bool has_wheel_slipped[4]; 
@@ -77,7 +78,11 @@ namespace terrain_estimator {
 	double normal_force_avg[4]; 
 	double traction_count; 
 	double init_traction; 
-
+	int path[4]; 
+	int unkwon[4]; 
+	int grass[4]; 
+	int pebles[4]; 
+	
 
     public:
         Task(std::string const& name = "terrain_estimator::Task");
@@ -134,7 +139,7 @@ namespace terrain_estimator {
         /** This hook is called by Orocos when the state machine transitions
          * from Running to Stopped after stop() has been called.
          */
-        // void stopHook();
+        void stopHook();
 
         /** This hook is called by Orocos when the state machine transitions
          * from Stopped to PreOperational, requiring the call to configureHook()
