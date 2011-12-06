@@ -31,7 +31,9 @@ task_context 'Task' do
 	doc 'the type of terrain used in the learning process'
 
     
-    property('configuration', 'terrain_estimator/HistogramConfiguration')
+    property('histogram_traction_conf', 'terrain_estimator/HistogramConfiguration')
+    property('histogram_angular_vel_conf', 'terrain_estimator/HistogramConfiguration')
+    property('histogram_linear_vel_conf', 'terrain_estimator/HistogramConfiguration')
     property('svm_classifier', 'terrain_estimator/SVMClassifiers')
 
 
@@ -71,6 +73,8 @@ task_context 'Task' do
 
     output_port('debug_physical_filter', '/terrain_estimator/PhysicalFilter ')
         
+    output_port('angular_vel', 'double')
+    output_port('linear_vel', 'double')
 
     port_driven 
 end

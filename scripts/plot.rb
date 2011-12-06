@@ -161,13 +161,27 @@ class PlotTerrain
 
 	@plot_physicalFilter =  register2DPlot(ARGV[0],"Sample", "Traction Force (N)",true) 
 	
-		
+	@plot_vel = DataPlot.new()	
+	@plot_vel.register1D( :w0, {:title => "Linear Velocity", :lt =>"l  lt 1"} )
+	@sample_ang_vel = 0
+	
 	@plot_key = Array.new
 	@plot_key << :w0
 	@plot_key << :w1
 	@plot_key << :w2
 	@plot_key << :w3
 	
+    end 
+    
+    def addLinearVelocity( data )
+	
+# 	@plot_vel.addData(:w0, [value] )
+# 	@sample_ang_vel = @sample_ang_vel + 1 
+    end 
+    
+    def addAngularVelocity( data ) 
+	#@plot_vel.addData(:w1, [@sample_ang_vel, data] )
+	#@sample_ang_vel = @sample_ang_vel + 1 
     end 
     
     def addSlipCorrectedOdometry( data ) 
@@ -218,7 +232,9 @@ class PlotTerrain
 # 	@plot_time_Nvotes.show
 # 	@plot_normal_traction.show
 #  	@plot_time_totSlip.show
- 	
+	pp @plot_vel          
+ 	@plot_vel.show 
+	       
 	@plot_physicalFilter.show
 	
 	for i in 0..3

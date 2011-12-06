@@ -13,8 +13,10 @@ namespace terrain_estimator
      * @param terrain_types - the list of terrains types in the classification
      * @param min_number_of_votes - minimal number of votes needed for a terrain to be detected (each svm function counts as one vote) -
      * @param svm_classifier - a vector os svm configurations for classifying terrain types 
+     * @param number_of_histogram - the number of histograms needed for a terrain classification
      */ 
     struct SVMClassifiers{
+	int number_of_histogram_combine; 
 	std::vector< TerrainType > terrain_types; 
 	int min_number_votes; 
 	std::vector< SVMConfiguration > svm_classifier[4]; 
@@ -22,16 +24,14 @@ namespace terrain_estimator
     
     /**
      * The configuration for the histogram for terrain configuration
-     * @param number_of_histogram - the number of histograms needed for a terrain classification
      * @param number_bins - the number of bins in the histogram
-     * @param histogram_max_torque - the histogram upper limit
-     * @param histogram_min_torque - the histogram lower limit
+     * @param histogram_max - the histogram upper limit
+     * @param histogram_min - the histogram lower limit
     */
     struct HistogramConfiguration{
-	int number_of_histogram_combine; 
 	int number_bins; 
-	double histogram_max_torque;
-	double histogram_min_torque; 
+	double histogram_max;
+	double histogram_min; 
     };
     
     /**
@@ -84,6 +84,8 @@ namespace terrain_estimator
 	std::vector<double> tractions;
 	int wheel_idx; 
     }; 
+    
+
     
 }
 #endif

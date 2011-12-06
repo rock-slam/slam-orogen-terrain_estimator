@@ -25,12 +25,15 @@ namespace terrain_estimator {
 	/** 
 	 * The slip detection logic 
 	 * @param heading_change - change in the heading 
+	 * @param translation - the translation of the 4 axis in relation to the plane 
 	 * @return if there was a detected slip in any of the wheel 
 	 */ 
-	bool slipDetection(base::Time ts, double heading_change); 
+	bool slipDetection(base::Time ts, double heading_change, Vector4d translation); 
 	
 	/** 
 	 * The slip detection logic 
+	 * @param angular_velocity - the robot angular velocity 
+	 * @param linear_velocity - the robot linear velocity 
 	 * @return if there was a detected slip in any of the wheel 
 	 */ 
 	void terrainRecognition(base::Time ts); 
@@ -44,7 +47,9 @@ namespace terrain_estimator {
 	
 	std::vector<TractionForceGroupedIntoStep> steps; 
 	
-	Histogram *histogram; 
+	Histogram *histogram_traction; 
+	Histogram *histogram_angular_velocity; 
+	Histogram *histogram_linear_velocity; 
 	
 	std::vector<HistogramTerrainClassification> histogram_classifiers; 
 	
@@ -64,6 +69,9 @@ namespace terrain_estimator {
 	
 	/** previous encoder reading*/ 
 	Vector4d prev_encoder; 
+	
+	/** previous orientation sample callback time */
+	base::Time prev_time_orientation; 
 	
 	bool has_orientation; 
 	

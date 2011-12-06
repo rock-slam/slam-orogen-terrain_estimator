@@ -5,7 +5,7 @@
 require 'orocos/log'
 require 'vizkit'
 require 'orocos'
-#require 'plot.rb'
+# require 'plot.rb'
 require 'svm_configuration'
 include Orocos
 
@@ -39,7 +39,7 @@ Orocos.run('test_terrain_estimator') do |p|
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
    # widget = Vizkit.display log_replay.external_camera.frame
-    estimator.terrain_type = :PEBLES
+    estimator.terrain_type = :GRASS
     estimator.slip_threashold = 0.005 #0.008 
    
     svm_classifiers = estimator.svm_classifier
@@ -53,6 +53,7 @@ Orocos.run('test_terrain_estimator') do |p|
 	    end
 	svm_classifier.svm_classifier = svm 
 	svm_classifier.min_number_votes = 1
+	svm_classifier.number_of_histogram_combine = 3
 	terrain_types = svm_classifier.terrain_types
 	    terrain_types << :UNKNOWN
 	    terrain_types << :GRASS 
@@ -61,14 +62,24 @@ Orocos.run('test_terrain_estimator') do |p|
 	svm_classifier.terrain_types = terrain_types
     estimator.svm_classifier = svm_classifier
 
-    pp  estimator.svm_classifier
-    
-    configuration = estimator.configuration 
-        configuration.number_of_histogram_combine = 3
+     
+    configuration = estimator.histogram_traction_conf 
 	configuration.number_bins = 16
-	configuration.histogram_max_torque = 0
-	configuration.histogram_min_torque = -50 #-60
-    estimator.configuration = configuration 
+	configuration.histogram_max = 0
+	configuration.histogram_min = -50 #-60
+    estimator.histogram_traction_conf = configuration 
+    
+    configuration = estimator.histogram_angular_vel_conf 
+	configuration.number_bins = 8
+	configuration.histogram_max = 2
+	configuration.histogram_min = 0 #-60
+    estimator.histogram_angular_vel_conf = configuration 
+    
+    configuration = estimator.histogram_linear_vel_conf 
+	configuration.number_bins = 8
+	configuration.histogram_max = 1
+	configuration.histogram_min = 0 #-60
+    estimator.histogram_linear_vel_conf = configuration 
     
     estimator.configure
     estimator.start
@@ -81,7 +92,7 @@ Orocos.run('test_terrain_estimator') do |p|
 #     end
 # 
 #     estimator.histogram_terrain_classification.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	#plot.addHistogramTerrainClassification( data ) 
+# 	plot.addHistogramTerrainClassification( data ) 
 # 	data
 #     end
 #     
@@ -95,7 +106,18 @@ Orocos.run('test_terrain_estimator') do |p|
 # 	data
 #     end    
 #     
-    
+#     estimator.linear_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	#pp data
+# 	#plot.addLinearVelocity( data ) 
+# 	data
+#     end    
+#     
+#     estimator.angular_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	#pp data
+# 	#plot.addAngularVelocity( data ) 
+# 	data
+#     end    
+#     
     log_replay.align( :use_sample_time )
    
     viz = Vizkit.control log_replay
