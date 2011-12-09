@@ -3,14 +3,8 @@ version '0.1'
 
 using_library "terrain_estimator" 
 
-using_library "asguard"
-
 import_types_from 'base'
-import_types_from 'sysmon'
-import_types_from "hbridge"
 import_types_from 'torque_estimator' 
-#import_types_from "asguard/BodyState.hpp"
-#import_types_from "asguard/Configuration.hpp"
 
 import_types_from "TerrainTypes.hpp"
 import_types_from "terrain_estimator/TerrainConfiguration.hpp" 
