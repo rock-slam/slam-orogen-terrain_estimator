@@ -9,6 +9,7 @@
   <license>LGPL v2 or later</license>
 
   <depend package="asguard/terrain_estimator"/>
+  <depend package="asguard/orogen/torque_estimator"/>
   <tags>needs_opt</tags>
 
 </package>
