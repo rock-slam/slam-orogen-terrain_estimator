@@ -5,7 +5,7 @@
 require 'orocos/log'
 require 'vizkit'
 require 'orocos'
-# require 'plot.rb'
+ require 'plot.rb'
 require 'svm_configuration'
 include Orocos
 
@@ -29,15 +29,22 @@ Orocos.run('test_terrain_estimator') do |p|
     logs << ARGV[0]+"lowlevel.0.log"
     logs << ARGV[0]+"test_torque.0.log"
     logs << ARGV[0]+"xsens_imu.0.log"
+#    logs << ARGV[0]+"camera.0.log"
     # connect the tasks to the logs
  #    log_replay = Orocos::Log::Replay.open( ARGV[0] )
       log_replay = Orocos::Log::Replay.open( logs ) 
 
     log_replay.hbridge.status_motors.connect_to( estimator.motor_status, :type => :data ) 
-    log_replay.torque.ground_forces_estimated.connect_to( estimator.ground_forces_estimated, :type => :data )
+    log_replay.torque.ground_forces_estimated.connect_to( estimator.ground_forces_estimated, :type => :data ) 
     #log_replay.hbridge.status_motors.connect_to( estimator.status, :type => :data )
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
+#     log_replay.camera_left.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	data
+#     end
+#     log_replay.camera_right.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	data
+#     end
    # widget = Vizkit.display log_replay.external_camera.frame
     estimator.terrain_type = :GRASS
     estimator.slip_threashold = 0.005 #0.008 
@@ -48,12 +55,12 @@ Orocos.run('test_terrain_estimator') do |p|
 	svm = svm_classifiers.svm_classifier
 	    for wheel_idx in 0..3
 		svm[wheel_idx] << svm_path_vs_grass(svm_conf.new, wheel_idx)
-		#svm[wheel_idx] << svm_path_vs_pebles(svm_conf.new, wheel_idx)
-		#svm[wheel_idx] << svm_grass_vs_pebles(svm_conf.new, wheel_idx)
+#		svm[wheel_idx] << svm_path_vs_pebles(svm_conf.new, wheel_idx)
+#		svm[wheel_idx] << svm_grass_vs_pebles(svm_conf.new, wheel_idx)
 	    end
 	svm_classifier.svm_classifier = svm 
 	svm_classifier.min_number_votes = 1
-	svm_classifier.number_of_histogram_combine = 3
+	svm_classifier.number_of_histogram_combine = 3 #3
 	terrain_types = svm_classifier.terrain_types
 	    terrain_types << :UNKNOWN
 	    terrain_types << :GRASS 
@@ -66,7 +73,7 @@ Orocos.run('test_terrain_estimator') do |p|
     configuration = estimator.histogram_traction_conf 
 	configuration.number_bins = 16
 	configuration.histogram_max = 0
-	configuration.histogram_min = -50 #-60
+	configuration.histogram_min = -60 #-50 
     estimator.histogram_traction_conf = configuration 
     
     configuration = estimator.histogram_angular_vel_conf 
@@ -84,45 +91,45 @@ Orocos.run('test_terrain_estimator') do |p|
     estimator.configure
     estimator.start
     
-#     plot = PlotTerrain.new 
-#     
-#     estimator.debug_slip_detection.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	plot.addDebugSlipDetection( data ) 
-# 	data
-#     end
-# 
-#     estimator.histogram_terrain_classification.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	plot.addHistogramTerrainClassification( data ) 
-# 	data
-#     end
-#     
-#     estimator.slip_detected.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	plot.addSlipDetected( data ) 
-# 	data
-#     end
-# 
-#     estimator.debug_physical_filter.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	plot.addPhysicalFilter( data ) 
-# 	data
-#     end    
-#     
-#     estimator.linear_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	#pp data
-# 	#plot.addLinearVelocity( data ) 
-# 	data
-#     end    
-#     
-#     estimator.angular_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	#pp data
-# 	#plot.addAngularVelocity( data ) 
-# 	data
-#     end    
-#     
+    plot = PlotTerrain.new 
+    
+    estimator.debug_slip_detection.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addDebugSlipDetection( data ) 
+	data
+    end
+
+    estimator.histogram_terrain_classification.connect_to :type => :buffer,:size => 10000 do|data,name|
+	#plot.addHistogramTerrainClassification( data ) 
+	data
+    end
+    
+    estimator.slip_detected.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addSlipDetected( data ) 
+	data
+    end
+
+    estimator.debug_physical_filter.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addPhysicalFilter( data ) 
+	data
+    end    
+    
+    estimator.linear_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
+	#pp data
+	#plot.addLinearVelocity( data ) 
+	data
+    end    
+    
+    estimator.angular_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
+	#pp data
+	#plot.addAngularVelocity( data ) 
+	data
+    end    
+    
     log_replay.align( :use_sample_time )
    
     viz = Vizkit.control log_replay
     #viz.speed = 0.1
     Vizkit.exec
     
-#     plot.show() 
+     plot.show() 
 end
