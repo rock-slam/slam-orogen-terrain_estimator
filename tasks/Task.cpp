@@ -139,12 +139,22 @@ void Task::terrainRecognition(base::Time ts)
 			    path[wheel_idx]++;
 			else if ( type == 3) 
 			    pebles[wheel_idx]++;
+			if(type == 0 ) 
+			    std::cout << wheel_idx << " unkown"<< std::endl; 
+			else if ( type == 1) 
+			    std::cout << wheel_idx << " grass"<< std::endl; 
+			else if ( type == 2) 
+			    std::cout << wheel_idx << " path"<< std::endl; 
+			else if ( type == 3) 
+			    std::cout << wheel_idx << " pebles"<< std::endl; 
+			
 			
 			TerrainClassificationHistogram histogram_out; 
 			histogram_out.time = ts;
 			histogram_out.wheel_idx = wheel_idx; 
 			histogram_out.svm = 0;
-			histogram_out.terrain = _terrain_type.value(); 
+			histogram_out.terrain = _terrain_type.value();
+// 			histogram_out.terrain = type;  
 			histogram_out.histogram = histogram_classifiers.at(wheel_idx).getCombinedHistogram();
 			_histogram_terrain_classification.write(histogram_out); 
 			
