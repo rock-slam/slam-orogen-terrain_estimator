@@ -59,6 +59,8 @@ task_context 'Task' do
       needs_buffered_connection
 
 
+    output_port('terrain_classification', '/terrain_estimator/TerrainClassification')
+
     output_port('histogram_terrain_classification', '/terrain_estimator/TerrainClassificationHistogram')
 
     output_port('debug_slip_detection', '/terrain_estimator/DebugSlipDetection')

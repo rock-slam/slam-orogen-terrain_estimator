@@ -29,9 +29,9 @@ Orocos.run('test_terrain_estimator') do |p|
     logs << ARGV[0]+"lowlevel.0.log"
     logs << ARGV[0]+"test_torque.0.log"
     logs << ARGV[0]+"xsens_imu.0.log"
-#    logs << ARGV[0]+"camera.0.log"
+    logs << ARGV[0]+"camera.0.log"
     # connect the tasks to the logs
- #    log_replay = Orocos::Log::Replay.open( ARGV[0] )
+     #log_replay = Orocos::Log::Replay.open( ARGV[0] )
       log_replay = Orocos::Log::Replay.open( logs ) 
 
     log_replay.hbridge.status_motors.connect_to( estimator.motor_status, :type => :data ) 
@@ -39,15 +39,21 @@ Orocos.run('test_terrain_estimator') do |p|
     #log_replay.hbridge.status_motors.connect_to( estimator.status, :type => :data )
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
-#     log_replay.camera_left.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	data
-#     end
-#     log_replay.camera_right.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
-# 	data
-#     end
+    log_replay.camera_left.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+	data
+    end
+    log_replay.camera_right.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+	data
+    end
    # widget = Vizkit.display log_replay.external_camera.frame
-    estimator.terrain_type = :GRASS
-    estimator.slip_threashold = 0.005 #0.008 
+    if ARGV[1]== ":PATH"
+	estimator.terrain_type = :PATH
+    elsif ARGV[1]== ":GRASS"
+	estimator.terrain_type = :GRASS
+    else
+	estimator.terrain_type = :UNKNOWN
+    end
+    estimator.slip_threashold = 0.005 #0.008  # 
    
     svm_classifiers = estimator.svm_classifier
 	svm_conf = Orocos.registry.get("terrain_estimator/SVMConfiguration")
@@ -60,7 +66,7 @@ Orocos.run('test_terrain_estimator') do |p|
 	    end
 	svm_classifier.svm_classifier = svm 
 	svm_classifier.min_number_votes = 1
-	svm_classifier.number_of_histogram_combine = 3 #3
+	svm_classifier.number_of_histogram_combine = 1 #3
 	terrain_types = svm_classifier.terrain_types
 	    terrain_types << :UNKNOWN
 	    terrain_types << :GRASS 
@@ -73,7 +79,7 @@ Orocos.run('test_terrain_estimator') do |p|
     configuration = estimator.histogram_traction_conf 
 	configuration.number_bins = 16
 	configuration.histogram_max = 0
-	configuration.histogram_min = -60 #-50 
+	configuration.histogram_min = -35 #-50 
     estimator.histogram_traction_conf = configuration 
     
     configuration = estimator.histogram_angular_vel_conf 
@@ -114,7 +120,6 @@ Orocos.run('test_terrain_estimator') do |p|
     end    
     
     estimator.linear_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
-	#pp data
 	#plot.addLinearVelocity( data ) 
 	data
     end    
@@ -126,7 +131,7 @@ Orocos.run('test_terrain_estimator') do |p|
     end    
     
     log_replay.align( :use_sample_time )
-   
+    #log_replay.run
     viz = Vizkit.control log_replay
     #viz.speed = 0.1
     Vizkit.exec

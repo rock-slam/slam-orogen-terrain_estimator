@@ -73,6 +73,9 @@ namespace terrain_estimator {
 	/** previous orientation sample callback time */
 	base::Time prev_time_orientation; 
 	
+	/** the svm configuration */ 
+	SVMClassifiers svm_configuration; 
+	
 	bool has_orientation; 
 	
 	bool has_traction_force; 
@@ -90,6 +93,7 @@ namespace terrain_estimator {
 	int unkwon[4]; 
 	int grass[4]; 
 	int pebles[4]; 
+	Vector4d total_translation; 
 	
 
     public:

@@ -2,6 +2,7 @@
 
 #include "Task.hpp"
 #include <Eigen/Core>
+//#include <CGAL/Plane_3.h>
 
 using namespace terrain_estimator;
 using namespace asguard; 
@@ -87,7 +88,7 @@ bool Task::slipDetection(base::Time ts, double heading_change, Vector4d translat
 void Task::terrainRecognition(base::Time ts)
 {
     //TODO FIX INDEX HACK 
-    for( uint wheel_idx = 0; wheel_idx < 1; wheel_idx ++) 
+    for( uint wheel_idx = 0; wheel_idx < 4; wheel_idx ++) 
     {
 	if( slip_model->hasWheelConsecutivelySliped(wheel_idx))
 	    has_wheel_slipped[wheel_idx] = true; 
@@ -96,14 +97,14 @@ void Task::terrainRecognition(base::Time ts)
 	if( current_step_id[wheel_idx] != steps.at(wheel_idx).getCompletedStepId() ) 
 	{
 	    current_step_id[wheel_idx] = steps.at(wheel_idx).getCompletedStepId(); 
-	    
+    
 	    if(has_wheel_slipped[wheel_idx]) 
 	    {
 		Step step= steps.at(wheel_idx).getCompletedStep(); 
 		
 		//only consider steps that don't go into positive traction ( positive traction = wheel rotating backwars) 
 		//for the time being terrain recognition is only uni directional 
-		if( step.max_traction < 5)
+		if( step.max_traction < 5 )
 		{
 		    //Debug Lines 
 		    PhysicalFilter physical_filter; 
@@ -129,8 +130,9 @@ void Task::terrainRecognition(base::Time ts)
 		    
 		    if( has_terrain_classification ) 
 		    {
+			
 			TerrainType type = svm_classifiers.at(wheel_idx).getTerrainClassification(histogram_classifiers.at(wheel_idx).getCombinedHistogram()); 
-
+			
 			if(type == 0 ) 
 			    unkwon[wheel_idx]++;
 			else if ( type == 1) 
@@ -140,14 +142,14 @@ void Task::terrainRecognition(base::Time ts)
 			else if ( type == 3) 
 			    pebles[wheel_idx]++;
 			if(type == 0 ) 
-			    std::cout << wheel_idx << " unkown"<< std::endl; 
+			    std::cout << wheel_idx << " unkown "<< total_translation[wheel_idx] << std::endl; 
 			else if ( type == 1) 
-			    std::cout << wheel_idx << " grass"<< std::endl; 
+			    std::cout << wheel_idx << " grass "<< total_translation[wheel_idx] << std::endl; 
 			else if ( type == 2) 
-			    std::cout << wheel_idx << " path"<< std::endl; 
+			    std::cout << wheel_idx << " path "<< total_translation[wheel_idx] << std::endl; 
 			else if ( type == 3) 
-			    std::cout << wheel_idx << " pebles"<< std::endl; 
-			
+			    std::cout << wheel_idx << " pebles "<< total_translation[wheel_idx] << std::endl; 
+			    
 			
 			TerrainClassificationHistogram histogram_out; 
 			histogram_out.time = ts;
@@ -157,6 +159,19 @@ void Task::terrainRecognition(base::Time ts)
 // 			histogram_out.terrain = type;  
 			histogram_out.histogram = histogram_classifiers.at(wheel_idx).getCombinedHistogram();
 			_histogram_terrain_classification.write(histogram_out); 
+			
+			
+			TerrainClassification classification; 
+			classification.time = ts; 
+			classification.wheel_idx = wheel_idx; 
+			for(uint type_idx = 0; type_idx < svm_configuration.terrain_types.size(); type_idx ++) 
+			{
+			    TerrainProbability probility; 
+			    probility.type = svm_configuration.terrain_types.at(type_idx); 
+			    probility.probability = svm_classifiers.at(wheel_idx).getProbability(probility.type);
+			    classification.terrain.push_back(probility);
+			}
+			_terrain_classification.write(classification);
 			
 		    }
 		}
@@ -199,6 +214,9 @@ void Task::orientation_samplesCallback(const base::Time &ts, const ::base::sampl
     /** Calculate the tranlation of the axes in the odometry */ 
     asg_odo->setInitialEncoder(prev_encoder); 
     Vector4d translation = asg_odo->translationAxes(encoder); 
+    
+    //debug
+    total_translation = total_translation + translation; 
     
     //calculate the robot velocities 
     double dt = (ts - prev_time_orientation).toSeconds(); 
@@ -261,8 +279,9 @@ bool Task::configureHook()
 	normal_force_avg[i] = 0; 
 	current_step_id[i] = 0; 
 	has_wheel_slipped[i] = false; 
-
+	
     }
+    total_translation.setZero(); 
     
     delete slip_model; 
     delete asg_odo; 
@@ -280,7 +299,7 @@ bool Task::configureHook()
     histogram_linear_velocity = new Histogram(histogram_linear_vel_conf.number_bins, histogram_linear_vel_conf.histogram_min, histogram_linear_vel_conf.histogram_max); 
     histogram_angular_velocity = new Histogram(histogram_angular_vel_conf.number_bins, histogram_angular_vel_conf.histogram_min, histogram_angular_vel_conf.histogram_max); 
 
-    SVMClassifiers svm_configuration = _svm_classifier.value(); 
+    svm_configuration = _svm_classifier.value(); 
     
     for( int wheel_idx = 0; wheel_idx < 4; wheel_idx++) 
     {
@@ -328,9 +347,19 @@ void Task::updateHook()
 void Task::stopHook()
 {
     for(int wheel_idx = 0; wheel_idx < 4; wheel_idx++) 
-	std::cout << wheel_idx <<" unkwon " << unkwon[wheel_idx] << " grass "<< grass[wheel_idx] << " path " << path[wheel_idx] << " pebles " << pebles[wheel_idx] << std::endl; 
+    {
+	std::cout << wheel_idx <<" unkwon " << unkwon[wheel_idx] 
+	<< "| grass "<< grass[wheel_idx] 
+	<< "| path " << path[wheel_idx] 
+	<< "| pebles " << pebles[wheel_idx] 
+	<<" | translation " <<  total_translation[wheel_idx] 
+	<<" | total_detected_slips "<< (unkwon[wheel_idx]  + grass[wheel_idx] + path[wheel_idx] + pebles[wheel_idx])
+	<<" | meters/slip " <<  total_translation[wheel_idx] / (unkwon[wheel_idx] + grass[wheel_idx] + path[wheel_idx] + pebles[wheel_idx]) 
+	<< std::endl; 
+    }
+    std::cout << total_translation.transpose() << std::endl; 
     
-    TaskBase::stopHook();
+    
 }
 void Task::cleanupHook()
 {

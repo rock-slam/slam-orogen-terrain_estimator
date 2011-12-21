@@ -49,20 +49,27 @@ namespace terrain_estimator
     }; 
     
     /**
-    * @param time - the time the slip was detected (not the time it happened) 
-     * @param wheel_idx - the wheel index where the terrain was classified
-     * @param terrain - the terrain type 
-     * @param histogram - the histogram used for the classification
+     * @param terrain - the terrain type
+     * @param probability - the probability 
      */
-    struct TerrainClassificationHistogram{
-	base::Time time; 
-	int wheel_idx; 
-	double svm; 
-	TerrainType terrain; 
-	std::vector<double> histogram;
+    struct TerrainProbability{
+	TerrainType type; 
+	double probability; 
+	TerrainProbability()
+	    : type(UNKNOWN){}
     }; 
     
-
+    /**
+    * @param time - the time at the end of the step where the slip was detected
+     * @param wheel_idx - the wheel index where the terrain was classified
+     * @param terrain - the terrain type with the probability 
+     */
+    struct TerrainClassification{
+	base::Time time; 
+	int wheel_idx; 
+	std::vector<TerrainProbability> terrain;
+    }; 
+    
     /** This are Debug Only Structures*/ 
     struct Wheelslip{
 	bool slip; 
@@ -85,6 +92,19 @@ namespace terrain_estimator
 	int wheel_idx; 
     }; 
     
+    /**
+    * @param time - the time the slip was detected (not the time it happened) 
+     * @param wheel_idx - the wheel index where the terrain was classified
+     * @param terrain - the terrain type 
+     * @param histogram - the histogram used for the classification
+     */
+    struct TerrainClassificationHistogram{
+	base::Time time; 
+	int wheel_idx; 
+	double svm; 
+	TerrainType terrain; 
+	std::vector<double> histogram;
+    }; 
 
     
 }
