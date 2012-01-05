@@ -48,28 +48,6 @@ namespace terrain_estimator
 	double min_traction; 
     }; 
     
-    /**
-     * @param terrain - the terrain type
-     * @param probability - the probability 
-     */
-    struct TerrainProbability{
-	TerrainType type; 
-	double probability; 
-	TerrainProbability()
-	    : type(UNKNOWN){}
-    }; 
-    
-    /**
-    * @param time - the time at the end of the step where the slip was detected
-     * @param wheel_idx - the wheel index where the terrain was classified
-     * @param terrain - the terrain type with the probability 
-     */
-    struct TerrainClassification{
-	base::Time time; 
-	int wheel_idx; 
-	std::vector<TerrainProbability> terrain;
-    }; 
-    
     /** This are Debug Only Structures*/ 
     struct Wheelslip{
 	bool slip; 
