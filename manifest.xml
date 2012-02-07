@@ -10,6 +10,7 @@
 
   <depend package="asguard/terrain_estimator"/>
   <depend package="asguard/orogen/torque_estimator"/>
+  <depend package="drivers/orogen/aggregator"/>
   <tags>needs_opt</tags>
 
 </package>
