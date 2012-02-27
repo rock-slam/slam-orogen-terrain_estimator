@@ -38,7 +38,7 @@ log_replay.terrain_estimator.histogram_terrain_classification.connect_to :type =
     for i in 0 .. data.histogram.size - 1 
 	output = output + data.histogram[i].to_s + ","
     end
-    if data.terrain == :PATH 
+    if data.terrain == :PATH #This is suppose to be path 
 	output = output + "Target" 
     else
 	output = output + "Standard " 

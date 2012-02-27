@@ -39,12 +39,12 @@ Orocos.run('test_terrain_estimator') do |p|
     #log_replay.hbridge.status_motors.connect_to( estimator.status, :type => :data )
     log_replay.xsens_imu.orientation_samples.connect_to( estimator.orientation_samples, :type => :data )
     
-    log_replay.camera_left.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
-	data
-    end
-    log_replay.camera_right.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
-	data
-    end
+#     log_replay.camera_left.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	data
+#     end
+#     log_replay.camera_right.frame.connect_to :type => :buffer,:size => 10000 do|data,name|
+# 	data
+#     end
    # widget = Vizkit.display log_replay.external_camera.frame
     if ARGV[1]== ":PATH"
 	estimator.terrain_type = :PATH
@@ -105,12 +105,12 @@ Orocos.run('test_terrain_estimator') do |p|
     end
 
     estimator.histogram_terrain_classification.connect_to :type => :buffer,:size => 10000 do|data,name|
-	#plot.addHistogramTerrainClassification( data ) 
+# 	plot.addHistogramTerrainClassification( data ) 
 	data
     end
     
     estimator.slip_detected.connect_to :type => :buffer,:size => 10000 do|data,name|
-	plot.addSlipDetected( data ) 
+	#plot.addSlipDetected( data ) 
 	data
     end
 
@@ -119,16 +119,12 @@ Orocos.run('test_terrain_estimator') do |p|
 	data
     end    
     
-    estimator.linear_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
-	#plot.addLinearVelocity( data ) 
+    estimator.debug_body_dynamics.connect_to :type => :buffer,:size => 10000 do|data,name|
+	plot.addLinearVelocity( data.linear_velocity ) 
+	plot.addAngularVelocity( data.angular_velocity ) 
 	data
     end    
     
-    estimator.angular_vel.connect_to :type => :buffer,:size => 10000 do|data,name|
-	#pp data
-	#plot.addAngularVelocity( data ) 
-	data
-    end    
     
     log_replay.align( :use_sample_time )
     #log_replay.run
@@ -136,5 +132,5 @@ Orocos.run('test_terrain_estimator') do |p|
     #viz.speed = 0.1
     Vizkit.exec
     
-     plot.show() 
+#      plot.show() 
 end

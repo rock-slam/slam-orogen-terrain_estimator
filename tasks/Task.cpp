@@ -109,6 +109,8 @@ void Task::terrainRecognition(base::Time ts)
 		    //Debug Lines 
 		    PhysicalFilter physical_filter; 
 		    physical_filter.tractions = step.traction; 
+		    physical_filter.angular_velocities = step.angular_velocity; 
+		    physical_filter.linear_velocities = step.linear_velocity; 
 		    physical_filter.wheel_idx = wheel_idx; 
 		    _debug_physical_filter.write(physical_filter);
 		    
@@ -223,9 +225,12 @@ void Task::orientation_samplesCallback(const base::Time &ts, const ::base::sampl
     prev_time_orientation = ts; 
     double angular_velocity = fabs(heading - prev_heading) / dt; 
     double linear_velocity = translation.mean() / dt; 
-
-    _linear_vel.write(linear_velocity); 
-    _angular_vel.write(angular_velocity);
+    
+    DebugBodyDynamics debug_dynamics; 
+    debug_dynamics.angular_velocity = angular_velocity; 
+    debug_dynamics.linear_velocity = linear_velocity; 
+    _debug_body_dynamics.write(debug_dynamics); 
+    
     
     
     //adds the velocities to the current step 

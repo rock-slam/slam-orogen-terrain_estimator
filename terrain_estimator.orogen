@@ -69,8 +69,8 @@ task_context 'Task' do
 
     output_port('debug_physical_filter', '/terrain_estimator/PhysicalFilter ')
         
-    output_port('angular_vel', 'double')
-    output_port('linear_vel', 'double')
+    output_port('debug_body_dynamics', '/terrain_estimator/DebugBodyDynamics')
+
 
     port_driven 
 end

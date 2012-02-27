@@ -9,6 +9,7 @@
 namespace terrain_estimator
 {
 
+   
     /**
      * @param terrain_types - the list of terrains types in the classification
      * @param min_number_of_votes - minimal number of votes needed for a terrain to be detected (each svm function counts as one vote) -
@@ -49,6 +50,15 @@ namespace terrain_estimator
     }; 
     
     /** This are Debug Only Structures*/ 
+    /**
+     * @param angular_velocity - the body angular velocity 
+     * @param linar_velocity - the body linear velocity 
+     */
+    struct DebugBodyDynamics{
+	double angular_velocity; 
+	double linear_velocity; 
+    };
+    
     struct Wheelslip{
 	bool slip; 
 	double traction_force; 
@@ -67,6 +77,8 @@ namespace terrain_estimator
 
     struct PhysicalFilter{
 	std::vector<double> tractions;
+	std::vector<double> angular_velocities;
+	std::vector<double> linear_velocities;
 	int wheel_idx; 
     }; 
     

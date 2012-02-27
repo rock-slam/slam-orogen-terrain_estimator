@@ -95,7 +95,8 @@ def registerHistogram( plot, size, title )
     for i in 0..size - 1 
 	bin_id = "bin "+(i+1).to_s 
 	title = bin_id 
-	plot.register1D( bin_id, {:title => title} )
+	#plot.register1D( bin_id, {:title => title} )
+	plot.register1D( bin_id, {:title => ""} )
 	
     end
     
@@ -136,13 +137,15 @@ def registerTractionSlip(wheel_idx, title)
 	plot.register2D( :Bottom, {:title => getWheel(wheel_idx)+" Bottom", :lt =>"p pointsize 1 pt 4"} )
 	plot.setTitle(title, "Helvetica,14")
 	plot.setXLabel("time (s)", "Helvetica,14")
-	plot.setYLabel("Traction (s)", "Helvetica,14") 
+	plot.setYLabel("Traction (N)", "Helvetica,14") 
 	plot
 end
 class PlotTerrain 
     def initialize
 	@init_time = 0.0 
 	@sample = 0
+	@sample_ang_vel = 0
+	@sample_lin_vel = 0
 	
 	@plot_time_traction_slip = Array.new
 	for i in 0 .. 3 
@@ -151,19 +154,35 @@ class PlotTerrain
 	    
 	end
 	
-	@plot_time_traction = register2DPlot(ARGV[0], "time (s) ", "Traction Force (N)") 
+	@plot_time_traction = register2DPlot(ARGV[0], "time (s) ", "Traction (N)") 
 	
 	@plot_time_Nvotes = register2DPlot(ARGV[0], "time (s) ", "Number Votes (N)") 
 
 	@plot_time_totSlip= register2DPlot(ARGV[0], "time (s)", "hypostesis total slip (m) ")     
 	
-	@plot_legPos_traction = register2DPlot(ARGV[0], "leg position (rad) ", "Traction Force (N)") 
+	@plot_legPos_traction = register2DPlot(ARGV[0], "leg position (rad) ", "Traction (N)") 
 
-	@plot_physicalFilter =  register2DPlot(ARGV[0],"Sample", "Traction Force (N)",true) 
+	@plot_physicalFilter =  register2DPlot(ARGV[0],"Step", "Traction (N)",true) 
 	
 	@plot_vel = DataPlot.new()	
 	@plot_vel.register1D( :w0, {:title => "Linear Velocity", :lt =>"l  lt 1"} )
-	@sample_ang_vel = 0
+	@plot_vel.setXLabel("time (s)", "Helvetica,14")
+	@plot_vel.setYLabel("Velocity m/s (s)", "Helvetica,14") 
+
+	@plot_vel_filter = DataPlot.new()	
+	@plot_vel_filter.register2D( :w0, {:title => "Linear Velocity", :lt =>"l  lt 1"} )
+	@plot_vel_filter.setXLabel("sample (s)", "Helvetica,14")
+	@plot_vel_filter.setYLabel("Velocity m/s (s)", "Helvetica,14") 
+	
+	@plot_ang_vel = DataPlot.new()	
+	@plot_ang_vel.register1D( :w1, {:title => "Angular Velocity", :lt =>"l  lt 2"} )
+	@plot_ang_vel.setXLabel("time (s)", "Helvetica,14")
+	@plot_ang_vel.setYLabel("Velocity rad/s (s)", "Helvetica,14") 
+
+	@plot_ang_vel_filter = DataPlot.new()	
+	@plot_ang_vel_filter.register1D( :w0, {:title => "Angular Velocity", :lt =>"l  lt 2"} )
+	@plot_ang_vel_filter.setXLabel("sample", "Helvetica,14")
+	@plot_ang_vel_filter.setYLabel("Velocity rad/s (s)", "Helvetica,14") 
 	
 	@plot_key = Array.new
 	@plot_key << :w0
@@ -174,14 +193,11 @@ class PlotTerrain
     end 
     
     def addLinearVelocity( data )
-	
-# 	@plot_vel.addData(:w0, [value] )
-# 	@sample_ang_vel = @sample_ang_vel + 1 
+  	@plot_vel.addData(:w0, [data] )
     end 
     
     def addAngularVelocity( data ) 
-	#@plot_vel.addData(:w1, [@sample_ang_vel, data] )
-	#@sample_ang_vel = @sample_ang_vel + 1 
+ 	@plot_ang_vel.addData(:w1, [data] )
     end 
     
     def addSlipCorrectedOdometry( data ) 
@@ -190,13 +206,23 @@ class PlotTerrain
     end 
     
     def addPhysicalFilter( data ) 
-	#@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [getLegPos(data.encoder), data.traction] ) 
-	for i in 0 .. data.tractions.size - 1 
-	    @sample = @sample + 1 
+	if data.wheel_idx == 0 
+	    #@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [getLegPos(data.encoder), data.traction] ) 
+	    for i in 0 .. data.tractions.size - 1 
+		@sample = @sample + 1 
+		@plot_physicalFilter.addData( @plot_key[data.wheel_idx], [@sample, data.tractions[i]] ) 
+	    end
+	    @sample = @sample + 100 
 
-	    @plot_physicalFilter.addData( @plot_key[data.wheel_idx], [@sample, data.tractions[i]] ) 
+# 	    for i in 0 .. data.angular_velocities.size - 1 
+# 		@plot_ang_vel_filter.addData( :w0, [@sample_ang_vel, data.angular_velocities[i]] ) 
+# 		@sample_ang_vel = @sample_ang_vel + 1
+# 		@plot_lin_vel_filter.addData( :w0, [@sample_lin_vel, data.linear_velocities[i]] ) 
+# 		@sample_lin_vel = @sample_lin_vel + 1
+# 	    end
+# 	    @sample_ang_vel = @sample_ang_vel + 100
+# 	    @sample_lin_vel = @sample_lin_vel + 100
 	end
-	  @sample = @sample + 100 
     end 
     
     def addHistogramTerrainClassification( data ) 
@@ -209,7 +235,7 @@ class PlotTerrain
     
     def addDebugSlipDetection( data ) 
 	
-	for i in 0..3
+	for i in 0..0
 	    @plot_time_traction.addData(  @plot_key[i], [dt(data), data.slip[i].traction_force]) if data
 	    @plot_time_totSlip.addData( @plot_key[i], [dt(data), data.slip[i].total_slip]) if data
 	    @plot_time_Nvotes.addData( @plot_key[i], [dt(data), data.slip[i].numb_slip_votes]) if data
@@ -234,8 +260,11 @@ class PlotTerrain
 #  	@plot_time_totSlip.show
 	pp @plot_vel          
  	@plot_vel.show 
-	       
+	@plot_ang_vel.show
+	
 	@plot_physicalFilter.show
+# 	@plot_ang_vel_filter.show
+# 	@plot_lin_vel_filter.show
 	
 	for i in 0..3
 	    @plot_time_traction_slip[i].show
