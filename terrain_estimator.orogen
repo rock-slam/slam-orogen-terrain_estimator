@@ -16,6 +16,13 @@ task_context 'Task' do
     ##########################
     # parameters
     ##########################
+
+    property('track_width', 'double').
+        doc 'the width between two wheels on the same axis'
+    property('angle_between_legs', 'double').
+        doc 'the angle between two legs on a single wheel'
+    property('wheel_radius', 'double').
+        doc 'the angle between two legs on a single wheel'
     
     property('slip_threashold', 'double',0.005).
 	doc 'the threashold of the relative movement between the axis that indicates a slip'
@@ -73,16 +80,5 @@ task_context 'Task' do
 
 
     port_driven 
-end
-
-
-deployment "test_terrain_estimator" do
-    do_not_install
-    terrain_estimator_task = task("terrain_estimator", "Task")
-    
-    add_default_logger
-    if !corba_enabled?
-        browse odometry_task
-    end
 end
 

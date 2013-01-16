@@ -2,14 +2,14 @@
 
 #include "Task.hpp"
 #include <Eigen/Core>
+#include <base/actuators/vehicles.h>
 //#include <CGAL/Plane_3.h>
 
 using namespace terrain_estimator;
-using namespace asguard; 
 using namespace Eigen; 
 
 Task::Task(std::string const& name)
-    : TaskBase(name), slip_model(0), asg_odo(0), histogram_traction(0), histogram_linear_velocity(0), histogram_angular_velocity(0)      
+    : TaskBase(name), slip_model(0), odometry(0), histogram_traction(0), histogram_linear_velocity(0), histogram_angular_velocity(0)      
 {
     
 }
@@ -22,7 +22,7 @@ Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
 Task::~Task()
 {
     delete slip_model; 
-    delete asg_odo; 
+    delete odometry; 
     delete histogram_traction; 
     delete histogram_linear_velocity; 
     delete histogram_angular_velocity; 
@@ -214,8 +214,8 @@ void Task::orientation_samplesCallback(const base::Time &ts, const ::base::sampl
     }
     
     /** Calculate the tranlation of the axes in the odometry */ 
-    asg_odo->setInitialEncoder(prev_encoder); 
-    Vector4d translation = asg_odo->translationAxes(encoder); 
+    odometry->setInitialEncoder(prev_encoder); 
+    Vector4d translation = odometry->translationAxes(encoder); 
     
     //debug
     total_translation = total_translation + translation; 
@@ -289,7 +289,7 @@ bool Task::configureHook()
     total_translation.setZero(); 
     
     delete slip_model; 
-    delete asg_odo; 
+    delete odometry; 
     delete histogram_traction; 
     delete histogram_angular_velocity;
     delete histogram_linear_velocity;
@@ -298,8 +298,8 @@ bool Task::configureHook()
     steps.clear(); 
     svm_classifiers.clear(); 
     
-    slip_model = new SlipDetectionModelBased( asguard_conf.trackWidth, asguard::FRONT_LEFT, asguard::FRONT_RIGHT, asguard::REAR_LEFT, asguard::REAR_RIGHT);
-    asg_odo = new AsguardOdometry(asguard_conf.angleBetweenLegs, asguard_conf.wheelRadiusAvg); 
+    slip_model = new SlipDetectionModelBased( _track_width, base::actuators::WHEEL4_FRONT_LEFT, base::actuators::WHEEL4_FRONT_RIGHT, base::actuators::WHEEL4_REAR_LEFT, base::actuators::WHEEL4_REAR_RIGHT);
+    odometry = new LegWheelOdometry(_angle_between_legs, _wheel_radius); 
     histogram_traction = new Histogram(histogram_traction_conf.number_bins, histogram_traction_conf.histogram_min, histogram_traction_conf.histogram_max);
     histogram_linear_velocity = new Histogram(histogram_linear_vel_conf.number_bins, histogram_linear_vel_conf.histogram_min, histogram_linear_vel_conf.histogram_max); 
     histogram_angular_velocity = new Histogram(histogram_angular_vel_conf.number_bins, histogram_angular_vel_conf.histogram_min, histogram_angular_vel_conf.histogram_max); 
@@ -315,7 +315,7 @@ bool Task::configureHook()
 	svm_classifiers.push_back(svm);
 	svm_classifiers.at(wheel_idx).addSVMClassifier(svm_configuration.svm_classifier[wheel_idx]);
 	
-	TractionForceGroupedIntoStep stepStack(asguard_conf.angleBetweenLegs); 
+	TractionForceGroupedIntoStep stepStack(_angle_between_legs); 
 	steps.push_back(stepStack);
     }
 

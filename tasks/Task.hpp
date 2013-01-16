@@ -5,16 +5,12 @@
 
 #include "terrain_estimator/TaskBase.hpp"
 
-
-#include "asguard/Configuration.hpp"
-#include "asguard/Transformation.hpp"
-
 #include "terrain_estimator/TerrainTypes.hpp"
 #include "terrain_estimator/ModelBaseAnalysis.hpp" 
 #include <Eigen/Core>
 #include <vector>
+
 namespace terrain_estimator {
-      
     class Task : public TaskBase
     {
 	friend class TaskBase;
@@ -38,12 +34,9 @@ namespace terrain_estimator {
 	 */ 
 	void terrainRecognition(base::Time ts); 
 	
-
-	asguard::Configuration asguard_conf; 
-	
 	SlipDetectionModelBased *slip_model; 
 
-	AsguardOdometry *asg_odo; 
+	LegWheelOdometry *odometry; 
 	
 	std::vector<TractionForceGroupedIntoStep> steps; 
 	

@@ -8,8 +8,8 @@
   </copyright>
   <license>LGPL v2 or later</license>
 
-  <depend package="asguard/terrain_estimator"/>
-  <depend package="asguard/orogen/torque_estimator"/>
+  <depend package="slam/terrain_estimator"/>
+  <depend package="control/orogen/torque_estimator"/>
   <depend package="drivers/orogen/aggregator"/>
   <tags>needs_opt</tags>
 
