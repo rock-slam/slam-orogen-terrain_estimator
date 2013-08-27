@@ -14,9 +14,11 @@ namespace terrain_estimator {
     class Task : public TaskBase
     {
 	friend class TaskBase;
+
+    public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
     protected:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	/** 
 	 * The slip detection logic 
